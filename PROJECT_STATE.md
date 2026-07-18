@@ -68,16 +68,21 @@
   sign-in/sign-out UI। `ai-client.js`-এর `isAiEnabled()` এখন `window.TBUser.aiEnabled` চেক করে
   (local toggle বাদ)। `session-store.js` এখন সাইন-ইন থাকলে Firestore এও session push করে
   (best-effort, fail করলে silently শুধু local এ থাকে)।
+- **2026-07-19**: 🐛 **Bug reported:** owner এর ফোনে "Google দিয়ে Sign in করো" বাটনে ক্লিক করলে কিছুই
+  হচ্ছে না। DevTools ফোনে নেই বলে root cause এখনো নিশ্চিত না। **Fix (debug tooling):**
+  `index.html` এ visible on-page debug box যোগ করা হয়েছে — কোনো script error বা sign-in error
+  হলে এখন লাল বক্সে দেখাবে (আগে শুধু console এ যেত, যেটা phone থেকে দেখা যায় না)। `auth.js` এর
+  `signInWithGoogle()` এখন promise return করে যাতে caller error catch করতে পারে। **সন্দেহভাজন
+  কারণ:** owner এখনো Authentication → Sign-in method ট্যাবে গিয়ে Google provider enable করেছে
+  কিনা কনফার্ম হয়নি (শুধু Settings/Authorized domains ট্যাব screenshot এসেছে)।
 
 ## ৬. পরবর্তী কাজ (Next Up)
 
-1. **Owner action দরকার (জরুরি, নাহলে sign-in কাজ করবে না):**
-   - Firebase Console → Authentication → Sign-in method → **Google** enable করা
-   - Authentication → Settings → Authorized domains এ GitHub Pages domain (যেমন
-     `<username>.github.io`) যোগ করা
-   - প্রথমবার নিজে sign-in করার পর, Firestore Database → Data ট্যাবে গিয়ে নিজের `users/{uid}`
-     doc খুঁজে বের করে `aiEnabled` আর `isAdmin` দুটোই `true` করে দেওয়া (নিজেকে admin+AI-enabled
-     বানানো — rules অনুযায়ী এটা ক্লায়েন্ট থেকে করা যায় না, Console থেকেই করতে হবে)
+1. **Owner action (জরুরি, sign-in bug):**
+   - Authentication → Sign-in method ট্যাবে গিয়ে Google provider "Enabled" আছে কিনা কনফার্ম করা,
+     না থাকলে enable করে একটা support email সিলেক্ট করা (এটা লাগে Google provider চালু করতে)
+   - এই diff push করার পর আবার Sign in বাটনে ক্লিক করা — এখন যদি error থাকে, পেজেই লাল বক্সে
+     দেখাবে, সেই মেসেজ AI-কে (আমাকে বা অন্য যেকোনো AI-কে) পাঠানো
 2. **Owner action:** AI চালু করে সত্যিই test করা — CORS ব্লক করলে বিকল্প নিয়ে আলোচনা করতে হবে
    (Capacitor native HTTP plugin)
 3. Track D: Gamification (XP/Gold/Level/Combat) শুরু করা — এখন শুধু typing metrics আছে, game state নেই
