@@ -81,12 +81,24 @@
   <button class="next-btn" id="nextBtn">নতুন টেক্সট</button>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/auth.js"></script>
 <script src="data/content-bank.js"></script>
 <script src="js/typing-engine.js"></script>
 <script src="js/session-store.js"></script>
 <script src="js/ai-client.js"></script>
 <script src="js/ai-coach.js"></script>
 <script src="js/view-mode.js"></script>
+<script>
+  // Make sure window.TBUser is populated before the rest of the page logic
+  // (typing/AI) runs. TBAuth.onReady fires immediately with cached auth
+  // state, so this is fast, not a real blocking wait.
+  TBAuth.onReady(() => {});
+</script>
 <script>
   let currentLevel = "words";
   const targetDisplay = document.getElementById("targetDisplay");
