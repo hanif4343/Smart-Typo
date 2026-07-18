@@ -17,12 +17,50 @@
   <section class="hero">
     <h1>বাংলা টাইপিং মাস্টার হও</h1>
     <p>Phase 1-2 চলছে — Typing Engine ও AI Lesson System কাজ করছে।</p>
+
+    <div id="authArea" style="margin: 16px 0;">
+      <button id="signInBtn" class="next-btn" style="display:none;">🔑 Google দিয়ে Sign in করো</button>
+      <div id="userInfo" style="display:none; color: var(--muted); font-size:0.9rem;">
+        সাইন-ইন করা আছে: <span id="userName"></span>
+        (AI: <span id="aiStatus"></span>)
+        <br/>
+        <button id="signOutBtn" class="toggle-btn" style="margin-top:8px;">Sign out</button>
+      </div>
+    </div>
+
     <a href="lesson.html" class="settings-link">🧠 আজকের Lesson (AI)</a><br/>
     <a href="practice.html" class="settings-link">▶️ ফ্রি প্র্যাকটিস</a><br/>
     <a href="settings.html" class="settings-link">⚙️ Settings (API key)</a>
   </section>
 </main>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/view-mode.js"></script>
+<script>
+  const signInBtn = document.getElementById("signInBtn");
+  const userInfo = document.getElementById("userInfo");
+  const userName = document.getElementById("userName");
+  const aiStatus = document.getElementById("aiStatus");
+
+  signInBtn.addEventListener("click", TBAuth.signInWithGoogle);
+  document.getElementById("signOutBtn").addEventListener("click", TBAuth.signOutUser);
+
+  TBAuth.onReady((tbUser) => {
+    if (tbUser) {
+      signInBtn.style.display = "none";
+      userInfo.style.display = "block";
+      userName.textContent = tbUser.name || tbUser.uid;
+      aiStatus.textContent = tbUser.aiEnabled ? "চালু ✅" : "বন্ধ ❌";
+    } else {
+      signInBtn.style.display = "block";
+      userInfo.style.display = "none";
+    }
+  });
+</script>
 </body>
 </html>
