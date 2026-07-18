@@ -19,6 +19,18 @@ const SessionStore = (function () {
       weak[ch] = (weak[ch] || 0) + count;
     }
     localStorage.setItem(WEAKMAP_KEY, JSON.stringify(weak));
+
+    // Also push to Firestore if signed in — best-effort, never blocks the
+    // UI or throws up to the caller (typing test still works offline/
+    // signed-out, it just won't sync).
+    if (window.TBUser && window.db) {
+      window.db
+        .collection("typingSessions")
+        .doc(window.TBUser.uid)
+        .collection("sessions")
+        .add(result)
+        .catch((err) => console.warn("Firestore session sync failed:", err.message));
+    }
   }
 
   function getWeakChars(topN = 5) {
