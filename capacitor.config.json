@@ -1,0 +1,6 @@
+{
+  "appId": "com.typebangla.app",
+  "appName": "TypeBangla",
+  "webDir": "web",
+  "bundledWebRuntime": false
+}
