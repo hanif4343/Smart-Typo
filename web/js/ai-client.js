@@ -22,7 +22,10 @@ const AIClient = (function () {
   }
 
   function isAiEnabled() {
-    return localStorage.getItem("tb_ai_enabled") === "true";
+    // Authoritative source is now the Firestore users/{uid} doc, loaded by
+    // auth.js into window.TBUser. Not signed in → AI is off, no exceptions
+    // (this is the actual permission gate now, not a local toggle).
+    return !!(window.TBUser && window.TBUser.aiEnabled === true);
   }
 
   async function callGrok(key, systemPrompt, userPrompt) {
