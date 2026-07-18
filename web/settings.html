@@ -29,15 +29,12 @@
 <div class="form-wrap">
   <h2>AI Settings</h2>
 
-  <label for="aiEnabledToggle">AI System (Lesson + Coach)</label>
-  <select id="aiEnabledToggle">
-    <option value="false">বন্ধ (শুধু Rule-based lesson)</option>
-    <option value="true">চালু (AI lesson + coach ব্যবহার হবে)</option>
-  </select>
+  <label>AI System (Lesson + Coach) — Status</label>
+  <p id="aiStatusReadout" class="note" style="font-size:0.95rem;">লোড হচ্ছে...</p>
   <p class="note">
-    এটাই তোমার "পারমিশন" — এটা বন্ধ থাকলে অ্যাপ AI API কল করবে না, শুধু rule-based lesson দেখাবে।
-    এখন যেহেতু ইউজার শুধু তুমি, এটা এখানেই টগল হয়। ভবিষ্যতে অন্য ইউজার যোগ হলে এটা Firestore এ
-    per-user flag হবে, admin (তুমি) হিসেবে অন্যদের জন্য এটা কন্ট্রোল করতে পারবে।
+    এটাই তোমার আসল "পারমিশন" — এখন Firestore এর `users/{uid}` ডকুমেন্টের `aiEnabled` ফিল্ড দিয়ে
+    নিয়ন্ত্রিত হয়। বদলাতে হলে Firebase Console → Firestore Database → Data ট্যাবে গিয়ে নিজের
+    user doc খুঁজে `aiEnabled` কে `true` করে দাও। সাইন-ইন করা না থাকলে AI সবসময় বন্ধ থাকবে।
   </p>
 
   <label for="provider">AI Provider</label>
@@ -56,15 +53,26 @@
   </p>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/auth.js"></script>
 <script>
   const providerEl = document.getElementById("provider");
   const keyEl = document.getElementById("apiKey");
   const saveBtn = document.getElementById("saveBtn");
-  const aiEnabledEl = document.getElementById("aiEnabledToggle");
+  const aiStatusReadout = document.getElementById("aiStatusReadout");
 
-  aiEnabledEl.value = localStorage.getItem("tb_ai_enabled") || "false";
-  aiEnabledEl.addEventListener("change", () => {
-    localStorage.setItem("tb_ai_enabled", aiEnabledEl.value);
+  TBAuth.onReady((tbUser) => {
+    if (!tbUser) {
+      aiStatusReadout.textContent = "সাইন-ইন করা নেই — হোম পেজে গিয়ে Sign in করো।";
+    } else {
+      aiStatusReadout.textContent = tbUser.aiEnabled
+        ? "চালু ✅ (AI lesson/coach ব্যবহার হবে)"
+        : "বন্ধ ❌ (শুধু rule-based lesson)";
+    }
   });
 
   // Load existing (if any) for the selected provider
