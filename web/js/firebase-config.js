@@ -9,12 +9,13 @@
 // boundary is firestore.rules, applied in the Firebase Console.
 
 const firebaseConfig = {
-  apiKey: "PASTE_HERE",
-  authDomain: "PASTE_HERE",
-  projectId: "PASTE_HERE",
-  storageBucket: "PASTE_HERE",
-  messagingSenderId: "PASTE_HERE",
-  appId: "PASTE_HERE",
+  apiKey: "AIzaSyDKjFyMnRnHGHhXPbPMiNRHZstTSIVajSs",
+  authDomain: "smart-typer-de3fc.firebaseapp.com",
+  projectId: "smart-typer-de3fc",
+  storageBucket: "smart-typer-de3fc.firebasestorage.app",
+  messagingSenderId: "45089050721",
+  appId: "1:45089050721:web:192553d565a916f8631a20",
+  measurementId: "G-CPRQ094N9N"
 };
 
 // Loaded as a plain script for now (Phase 1). Once we add the Firebase SDK
