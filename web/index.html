@@ -31,6 +31,8 @@
     <a href="lesson.html" class="settings-link">🧠 আজকের Lesson (AI)</a><br/>
     <a href="practice.html" class="settings-link">▶️ ফ্রি প্র্যাকটিস</a><br/>
     <a href="settings.html" class="settings-link">⚙️ Settings (API key)</a>
+
+    <div id="debugBox" style="display:none; margin-top:20px; padding:12px; background:#3a1414; border:1px solid #ff6b6b; border-radius:8px; color:#ffb3b3; font-size:0.85rem; text-align:left; word-break:break-word;"></div>
   </section>
 </main>
 
@@ -46,8 +48,30 @@
   const userInfo = document.getElementById("userInfo");
   const userName = document.getElementById("userName");
   const aiStatus = document.getElementById("aiStatus");
+  const debugBox = document.getElementById("debugBox");
 
-  signInBtn.addEventListener("click", TBAuth.signInWithGoogle);
+  function showDebug(msg) {
+    debugBox.style.display = "block";
+    debugBox.textContent = "⚠️ " + msg;
+  }
+
+  // Surface any uncaught script error directly on the page — there's no
+  // desktop DevTools available on phone, so this is the debug channel.
+  window.addEventListener("error", (e) => {
+    showDebug("Script error: " + e.message + " (" + e.filename + ":" + e.lineno + ")");
+  });
+
+  signInBtn.addEventListener("click", () => {
+    debugBox.style.display = "none";
+    if (typeof TBAuth === "undefined") {
+      showDebug("TBAuth লোড হয়নি — Firebase SDK script ঠিকমতো লোড হয়েছে কিনা চেক করো (network/CDN)।");
+      return;
+    }
+    TBAuth.signInWithGoogle().catch((err) => {
+      showDebug("Sign-in error [" + err.code + "]: " + err.message);
+    });
+  });
+
   document.getElementById("signOutBtn").addEventListener("click", TBAuth.signOutUser);
 
   TBAuth.onReady((tbUser) => {
@@ -59,6 +83,9 @@
     } else {
       signInBtn.style.display = "block";
       userInfo.style.display = "none";
+      if (window.TBLastAuthError) {
+        showDebug("Auth/Firestore error: " + window.TBLastAuthError);
+      }
     }
   });
 </script>
