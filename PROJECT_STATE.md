@@ -36,9 +36,9 @@
 
 | Track | অবস্থা | নোট |
 |---|---|---|
-| A. Infra & DevOps | 🟡 শুরু হয়েছে | starter repo structure, workflows তৈরি হয়েছে; Firebase project এখনো তৈরি করা হয়নি |
-| B. Typing Core Engine | 🟡 প্রথম ভার্সন কাজ করছে | `practice.html` — letters/conjuncts/words/sentences মোড, live WPM/accuracy, per-char error tracking। সেশন এখন localStorage এ সেভ হয় (Firestore যোগ হয়নি এখনো) |
-| C. AI System | 🟡 প্রথম ভার্সন কাজ করছে | rule-based lesson (সবসময় কাজ করে) + AI-enhanced lesson/coach (permission-gated, client-side Grok/Cerebras call, ব্যর্থ হলে নিঃশব্দে rule-based এ fallback করে) |
+| A. Infra & DevOps | 🟡 এগোচ্ছে | starter repo + workflows আছে; Firebase project তৈরি হয়েছে ও config বসানো হয়েছে; Auth (Google sign-in) + Firestore integration কোড লেখা হয়েছে, owner-এর একটা কাজ বাকি (নিচে দেখো) |
+| B. Typing Core Engine | 🟡 প্রথম ভার্সন কাজ করছে | `practice.html` — letters/conjuncts/words/sentences মোড, live WPM/accuracy, per-char error tracking। সেশন এখন localStorage সবসময় + সাইন-ইন থাকলে Firestore এও সিঙ্ক হয় |
+| C. AI System | 🟡 প্রথম ভার্সন কাজ করছে | rule-based lesson + AI-enhanced lesson/coach। **permission gate এখন সত্যিকার Firestore-backed** (`users/{uid}.aiEnabled`) — সাইন-ইন ছাড়া AI সবসময় বন্ধ থাকবে, `settings.html` এর local toggle সরিয়ে ফেলা হয়েছে |
 | D. Game/Gamification Engine | ⬜ শুরু হয়নি | |
 | E. Content (বাংলা) | 🟡 ছোট শুরু | `data/content-bank.js` এ letters/conjuncts/words/sentences এর ছোট পুল আছে, বাড়ানো দরকার |
 | F. Art & Character Design | ⬜ শুরু হয়নি | style এখনো ঠিক হয়নি (pixel/anime/3D?) |
@@ -59,12 +59,27 @@
   gracefully rule-based এ fallback করে, কিন্তু owner-কে সত্যিকার device এ টেস্ট করে দেখতে হবে AI অংশ
   আদৌ কল হচ্ছে কিনা।
 
+- **2026-07-19**: `firestore.rules` যোগ হলো — real security boundary, `firebase-config.js` এর
+  apiKey কে GitHub secret-scanner ভুলভাবে "leaked secret" মনে করতে পারে, সেটা false-positive
+  (rules ঠিক থাকলে নিরাপদ, README-তে ব্যাখ্যা আছে)।
+- **2026-07-19**: Auth যোগ হলো — `web/js/firebase-init.js`, `web/js/auth.js` (Google sign-in,
+  `signInWithRedirect` ব্যবহার করা হয়েছে, popup না, কারণ mobile browser এ popup ব্লক হতে পারে)।
+  প্রথম সাইন-ইনে `users/{uid}` doc বানায় `aiEnabled:false, isAdmin:false` দিয়ে। `index.html` এ
+  sign-in/sign-out UI। `ai-client.js`-এর `isAiEnabled()` এখন `window.TBUser.aiEnabled` চেক করে
+  (local toggle বাদ)। `session-store.js` এখন সাইন-ইন থাকলে Firestore এও session push করে
+  (best-effort, fail করলে silently শুধু local এ থাকে)।
+
 ## ৬. পরবর্তী কাজ (Next Up)
 
-1. **Owner action দরকার:** `lesson.html`/Settings এ AI চালু করে সত্যিই test করা — CORS ব্লক করলে
-   বিকল্প নিয়ে আলোচনা করতে হবে (Capacitor native HTTP plugin, বা অন্য কিছু)
-2. Firebase প্রজেক্ট বানানো (owner করবে, phone থেকে console.firebase.google.com) + Firestore SDK
-   `web/` এ যোগ করে session data localStorage থেকে Firestore এ move করা
+1. **Owner action দরকার (জরুরি, নাহলে sign-in কাজ করবে না):**
+   - Firebase Console → Authentication → Sign-in method → **Google** enable করা
+   - Authentication → Settings → Authorized domains এ GitHub Pages domain (যেমন
+     `<username>.github.io`) যোগ করা
+   - প্রথমবার নিজে sign-in করার পর, Firestore Database → Data ট্যাবে গিয়ে নিজের `users/{uid}`
+     doc খুঁজে বের করে `aiEnabled` আর `isAdmin` দুটোই `true` করে দেওয়া (নিজেকে admin+AI-enabled
+     বানানো — rules অনুযায়ী এটা ক্লায়েন্ট থেকে করা যায় না, Console থেকেই করতে হবে)
+2. **Owner action:** AI চালু করে সত্যিই test করা — CORS ব্লক করলে বিকল্প নিয়ে আলোচনা করতে হবে
+   (Capacitor native HTTP plugin)
 3. Track D: Gamification (XP/Gold/Level/Combat) শুরু করা — এখন শুধু typing metrics আছে, game state নেই
 4. Track E: content bank আরও বড় করা (এখন খুবই ছোট, ৪-৫টা করে আইটেম আছে প্রতি level এ)
 5. Track F: Character/art style সিদ্ধান্ত
