@@ -1,0 +1,41 @@
+rules_version = '2';
+
+// এই rules ফাইলটাই আসল সুরক্ষা — web/js/firebase-config.js এ থাকা apiKey না।
+// Firebase Console → Firestore Database → Rules ট্যাবে গিয়ে এই কনটেন্ট paste করো।
+//
+// নীতি:
+// - প্রতিটা ইউজার শুধু নিজের ডেটা পড়তে/লিখতে পারবে
+// - aiEnabled / isAdmin ফিল্ড ইউজার নিজে বদলাতে পারবে না (privilege escalation ঠেকাতে) —
+//   এটা আপাতত শুধু owner নিজে Firebase Console থেকে ম্যানুয়ালি বদলাবে, যতক্ষণ না admin panel হয়
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users/{uid} — প্রোফাইল ডকুমেন্ট
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // নতুন ইউজার নিজের ডকুমেন্ট বানাতে পারবে, কিন্তু aiEnabled/isAdmin নিজে সেট করতে পারবে না
+      allow create: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.aiEnabled == false
+                    && request.resource.data.isAdmin == false;
+
+      // আপডেটে aiEnabled/isAdmin ফিল্ড বদলানো যাবে না ইউজার নিজে থেকে
+      allow update: if request.auth != null
+                    && request.auth.uid == uid
+                    && request.resource.data.aiEnabled == resource.data.aiEnabled
+                    && request.resource.data.isAdmin == resource.data.isAdmin;
+    }
+
+    // typingSessions/{uid}/sessions/{sessionId} — নিজের সেশন ডেটা
+    match /typingSessions/{uid}/sessions/{sessionId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // বাকি সবকিছু ডিফল্ট-বন্ধ
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
