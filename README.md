@@ -12,7 +12,13 @@
    `web/` ফোল্ডারে পরিবর্তন push করলে `deploy-pages.yml` workflow সাইট অটো-ডিপ্লয় করবে।
 3. **Firebase**: [console.firebase.google.com](https://console.firebase.google.com) এ নতুন প্রজেক্ট
    বানাও (Spark/Free plan — কার্ড লাগবে না), Firestore + Authentication চালু করো। কনফিগ
-   `web/js/firebase-config.js` এ বসাও।
+   `web/js/firebase-config.js` এ বসাও। এরপর Firebase Console → Firestore Database → Rules ট্যাবে
+   গিয়ে এই repo-র [`firestore.rules`](firestore.rules) এর কনটেন্ট paste করো — **এটাই আসল সুরক্ষা**,
+   `firebase-config.js` এর apiKey না (সেটা public identifier, secret না)।
+
+   > **GitHub secret-scan warning পেলে:** `firebase-config.js` push করলে GitHub একটা heuristic
+   > সতর্কতা দিতে পারে ("apiKey" pattern দেখে)। এটা false-positive — নিরাপদে dismiss করা যায়,
+   > যদি `firestore.rules` ঠিকমতো apply করা থাকে।
 4. **Android build**: `build-android.yml` workflow manually run করলে (Actions ট্যাব →
    "Build Android APK" → "Run workflow") একটা debug APK বানিয়ে দেবে, Artifacts থেকে ডাউনলোড
    করে ফোনে ইনস্টল করবে।
