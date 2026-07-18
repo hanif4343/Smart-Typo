@@ -14,7 +14,7 @@
 const TBAuth = (function () {
   function signInWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithRedirect(provider);
+    return firebase.auth().signInWithRedirect(provider);
   }
 
   function signOutUser() {
@@ -43,6 +43,7 @@ const TBAuth = (function () {
         } catch (err) {
           console.error("Failed to load/create user doc:", err);
           window.TBUser = null;
+          window.TBLastAuthError = err.message;
         }
       } else {
         window.TBUser = null;
