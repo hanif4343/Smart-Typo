@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Settings — TypeBangla</title>
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  .form-wrap { padding: 20px; max-width: 480px; margin: 0 auto; }
+  label { display: block; margin: 16px 0 6px; color: var(--muted); font-size: 0.9rem; }
+  input, select {
+    width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--muted);
+    background: var(--panel); color: var(--text); font-size: 1rem;
+  }
+  button.save {
+    margin-top: 20px; width: 100%; padding: 12px; border: none; border-radius: 8px;
+    background: var(--accent); color: #0b0d17; font-weight: 700; font-size: 1rem;
+  }
+  .note { color: var(--muted); font-size: 0.8rem; margin-top: 16px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="logo">TypeBangla</span>
+  <a href="index.html" class="toggle-btn" style="text-decoration:none;">← ফিরে যাও</a>
+</header>
+
+<div class="form-wrap">
+  <h2>AI Settings</h2>
+
+  <label>AI System (Lesson + Coach) — Status</label>
+  <p id="aiStatusReadout" class="note" style="font-size:0.95rem;">লোড হচ্ছে...</p>
+  <p class="note">
+    এটাই তোমার আসল "পারমিশন" — এখন Firestore এর `users/{uid}` ডকুমেন্টের `aiEnabled` ফিল্ড দিয়ে
+    নিয়ন্ত্রিত হয়। বদলাতে হলে Firebase Console → Firestore Database → Data ট্যাবে গিয়ে নিজের
+    user doc খুঁজে `aiEnabled` কে `true` করে দাও। সাইন-ইন করা না থাকলে AI সবসময় বন্ধ থাকবে।
+  </p>
+
+  <label for="provider">AI Provider</label>
+  <select id="provider">
+    <option value="groq">Groq</option>
+    <option value="mistral">Mistral</option>
+    <option value="cerebras">Cerebras</option>
+  </select>
+
+  <label for="apiKey">API Key (এই ডিভাইসেই থাকবে, কোথাও পাঠানো হবে না)</label>
+  <input id="apiKey" type="password" placeholder="sk-..." autocomplete="off" />
+
+  <button class="save" id="saveBtn">সেভ করো</button>
+  <p class="note">
+    এই key শুধু তোমার ব্রাউজার/অ্যাপের local storage-এ থাকে। কোনো সার্ভারে বা GitHub repo-তে যায় না।
+    App uninstall/browser data clear করলে আবার বসাতে হবে।
+  </p>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  const providerEl = document.getElementById("provider");
+  const keyEl = document.getElementById("apiKey");
+  const saveBtn = document.getElementById("saveBtn");
+  const aiStatusReadout = document.getElementById("aiStatusReadout");
+
+  TBAuth.onReady((tbUser) => {
+    if (!tbUser) {
+      aiStatusReadout.textContent = "সাইন-ইন করা নেই — হোম পেজে গিয়ে Sign in করো।";
+    } else {
+      aiStatusReadout.textContent = tbUser.aiEnabled
+        ? "চালু ✅ (AI lesson/coach ব্যবহার হবে)"
+        : "বন্ধ ❌ (শুধু rule-based lesson)";
+    }
+  });
+
+  // Load existing (if any) for the selected provider
+  function loadForProvider() {
+    const saved = localStorage.getItem("tb_ai_key_" + providerEl.value) || "";
+    keyEl.value = saved;
+  }
+  providerEl.addEventListener("change", loadForProvider);
+  loadForProvider();
+
+  saveBtn.addEventListener("click", function () {
+    localStorage.setItem("tb_ai_key_" + providerEl.value, keyEl.value.trim());
+    localStorage.setItem("tb_ai_provider_active", providerEl.value);
+    saveBtn.textContent = "সেভ হয়েছে ✓";
+    setTimeout(() => (saveBtn.textContent = "সেভ করো"), 1500);
+  });
+</script>
+
+</body>
+</html>
