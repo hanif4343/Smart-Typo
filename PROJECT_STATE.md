@@ -118,6 +118,10 @@
   হয়েছে। localStorage key naming pattern অপরিবর্তিত (`tb_ai_key_<provider>`), তাই পুরনো
   grok/cerebras key থাকলে সেগুলো অকেজো — নতুন provider সিলেক্ট করে নতুন key বসাতে হবে।
 
+- **2026-07-19**: Cerebras আবার যোগ হলো — owner-এর আসলে ৩টা provider আছে (Groq, Mistral,
+  Cerebras)। `ai-client.js` এ `callCerebras()` ফিরিয়ে আনা হলো (`api.cerebras.ai/v1`, model
+  `llama3.1-70b`), `settings.html` dropdown এ ৩টা option এখন।
+
 ## ৬. পরবর্তী কাজ (Next Up)
 
 1. **Owner কাজ করছে:** Piskel-এ Slime এনিমি আঁকা
