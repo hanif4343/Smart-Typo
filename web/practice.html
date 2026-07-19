@@ -32,6 +32,25 @@
   .stat-box .num { font-size: 1.4rem; font-weight: 700; color: var(--accent); }
   .stat-box .lbl { font-size: 0.75rem; color: var(--muted); }
 
+  .combat-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    background: var(--panel); border-radius: 10px; padding: 10px 14px;
+  }
+  .enemy-emoji { font-size: 1.8rem; }
+  .enemy-name { font-size: 0.8rem; color: var(--muted); min-width: 60px; }
+  .hp-bar-track { flex: 1; height: 12px; background: #2a1f2f; border-radius: 999px; overflow: hidden; }
+  .hp-bar-fill { height: 100%; background: #ff6b6b; width: 100%; transition: width 0.15s ease; }
+  .combo-badge {
+    font-size: 0.85rem; font-weight: 700; color: #ffd166; min-width: 54px; text-align: right;
+  }
+  .player-bar-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    background: var(--panel); border-radius: 10px; padding: 10px 14px; font-size: 0.85rem;
+  }
+  .xp-bar-track { flex: 1; height: 8px; background: #14202a; border-radius: 999px; overflow: hidden; }
+  .xp-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.2s ease; }
+  .reward-line { color: var(--accent); font-weight: 700; margin-top: 8px; }
+
   .result-box { margin-top: 16px; padding: 14px; background: var(--panel); border-radius: 10px; }
   .result-box h3 { margin-top: 0; }
   .weak-list { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
@@ -53,6 +72,20 @@
 </header>
 
 <div class="practice-wrap">
+  <div class="player-bar-row">
+    <span id="playerLevel">Lv 1</span>
+    <div class="xp-bar-track"><div class="xp-bar-fill" id="xpBarFill"></div></div>
+    <span id="playerGold">💰 0</span>
+    <span id="playerStreak">🔥 0</span>
+  </div>
+
+  <div class="combat-row">
+    <span class="enemy-emoji" id="enemyEmoji">👹</span>
+    <span class="enemy-name" id="enemyName">Slime</span>
+    <div class="hp-bar-track"><div class="hp-bar-fill" id="enemyHpFill"></div></div>
+    <span class="combo-badge" id="comboBadge"></span>
+  </div>
+
   <div class="level-picker" id="levelPicker">
     <button data-level="letters">অক্ষর</button>
     <button data-level="conjuncts">যুক্তাক্ষর</button>
@@ -74,11 +107,14 @@
     <h3>সেশন শেষ 🎉</h3>
     <p id="resultSummary"></p>
     <p id="coachMessage" style="color: var(--accent);"></p>
+    <p class="reward-line" id="rewardLine"></p>
     <div>দুর্বল অক্ষর (এখন পর্যন্ত সব সেশন মিলিয়ে):</div>
     <div class="weak-list" id="weakList"></div>
   </div>
 
   <button class="next-btn" id="nextBtn">নতুন টেক্সট</button>
+
+  <div id="debugBox" style="display:none; margin-top:16px; padding:12px; background:#3a1414; border:1px solid #ff6b6b; border-radius:8px; color:#ffb3b3; font-size:0.85rem; text-align:left; word-break:break-word;"></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -88,8 +124,10 @@
 <script src="js/firebase-init.js"></script>
 <script src="js/auth.js"></script>
 <script src="data/content-bank.js"></script>
+<script src="data/enemies.js"></script>
 <script src="js/typing-engine.js"></script>
 <script src="js/session-store.js"></script>
+<script src="js/game-engine.js"></script>
 <script src="js/ai-client.js"></script>
 <script src="js/ai-coach.js"></script>
 <script src="js/view-mode.js"></script>
@@ -101,6 +139,7 @@
 </script>
 <script>
   let currentLevel = "words";
+  let currentEnemy = getRandomEnemy();
   const targetDisplay = document.getElementById("targetDisplay");
   const input = document.getElementById("typeInput");
   const wpmVal = document.getElementById("wpmVal");
@@ -109,20 +148,45 @@
   const resultBox = document.getElementById("resultBox");
   const resultSummary = document.getElementById("resultSummary");
   const weakList = document.getElementById("weakList");
+  const debugBox = document.getElementById("debugBox");
 
-  function renderTarget(target, typed) {
+  function showDebug(msg) {
+    debugBox.style.display = "block";
+    debugBox.textContent = "⚠️ " + msg;
+  }
+  window.addEventListener("error", (e) => {
+    showDebug("Script error: " + e.message + " (" + e.filename + ":" + e.lineno + ")");
+  });
+
+  function renderTarget() {
+    const ops = TypingEngine.getLastOps();
     let html = "";
-    for (let i = 0; i < target.length; i++) {
-      const ch = target[i];
-      if (i < typed.length) {
-        html += typed[i] === ch
-          ? `<span class="correct">${ch}</span>`
-          : `<span class="incorrect">${ch}</span>`;
-      } else {
-        html += `<span class="pending">${ch}</span>`;
+    for (const op of ops) {
+      if (op.type === "match") {
+        html += `<span class="correct">${op.ch}</span>`;
+      } else if (op.type === "sub") {
+        html += `<span class="incorrect">${op.targetCh}</span>`;
+      } else if (op.type === "pending") {
+        html += `<span class="pending">${op.ch}</span>`;
       }
+      // "insert" ops (extra characters the user typed with no target slot)
+      // aren't shown inline in the target text — they still count toward
+      // errors/accuracy, just not rendered character-by-character here.
     }
-    targetDisplay.innerHTML = html;
+    targetDisplay.innerHTML = html || targetDisplay.innerHTML;
+  }
+
+  function renderPlayerBar() {
+    const state = GameEngine.getPlayerState();
+    const { level, xpIntoLevel, xpForNextLevel } = GameEngine.levelFromXp(state.totalXp);
+    document.getElementById("playerLevel").textContent = "Lv " + level;
+    document.getElementById("playerGold").textContent = "💰 " + state.gold;
+    document.getElementById("playerStreak").textContent = "🔥 " + (state.currentStreak || 0);
+    document.getElementById("xpBarFill").style.width = (xpIntoLevel / xpForNextLevel * 100) + "%";
+  }
+
+  function renderInitialTarget(text) {
+    targetDisplay.innerHTML = [...text].map(ch => `<span class="pending">${ch}</span>`).join("");
   }
 
   function newRound() {
@@ -136,33 +200,58 @@
     }
     TypingEngine.start(text);
     input.value = "";
-    renderTarget(text, "");
+    renderInitialTarget(text);
     wpmVal.textContent = "0";
     accVal.textContent = "100%";
     errVal.textContent = "0";
     resultBox.style.display = "none";
+    currentEnemy = getRandomEnemy();
+    document.getElementById("enemyHpFill").style.width = "100%";
+    document.getElementById("enemyEmoji").textContent = currentEnemy.emoji;
+    document.getElementById("enemyName").textContent = currentEnemy.name;
+    document.getElementById("comboBadge").textContent = "";
+    renderPlayerBar();
     input.focus();
   }
 
   input.addEventListener("input", (e) => {
     const typed = e.target.value;
     const stats = TypingEngine.handleInput(typed, e.inputType === "deleteContentBackward");
-    renderTarget(TypingEngine.getResult().targetText, typed);
+    renderTarget();
     wpmVal.textContent = stats.wpm;
     accVal.textContent = stats.accuracy + "%";
     errVal.textContent = stats.incorrectCount;
 
+    // Combat visual: enemy HP drains as correct characters land.
+    const targetLen = TypingEngine.getResult().targetText.length;
+    const hpPct = Math.max(0, 100 - (stats.correctCount / targetLen) * 100);
+    document.getElementById("enemyHpFill").style.width = hpPct + "%";
+    document.getElementById("comboBadge").textContent =
+      stats.currentCombo >= 5 ? "🔥×" + stats.currentCombo : "";
+
     if (stats.finished) {
       const result = TypingEngine.getResult();
       SessionStore.saveSession(result);
+      document.getElementById("enemyHpFill").style.width = "0%";
+      document.getElementById("enemyEmoji").textContent = currentEnemy.defeatedEmoji;
+
       resultSummary.textContent =
-        `WPM: ${result.wpm} | Accuracy: ${result.accuracy}% | ভুল: ${result.incorrectCount}`;
+        `WPM: ${result.wpm} | Accuracy: ${result.accuracy}% | ভুল: ${result.incorrectCount} | সর্বোচ্চ Combo: ${result.maxCombo}`;
       const weak = SessionStore.getWeakChars(6);
       weakList.innerHTML = weak.length
         ? weak.map(w => `<span class="weak-chip">${w.ch} (${w.count})</span>`).join("")
         : "<span class='weak-chip'>এখনো কোনো ভুল ট্র্যাক হয়নি 🎉</span>";
       resultBox.style.display = "block";
       input.blur();
+
+      const rewards = GameEngine.computeRewards(result);
+      const rewardResult = GameEngine.addRewards(rewards.xp, rewards.gold);
+      let rewardText = `+${rewards.xp} XP, +${rewards.gold} 💰`;
+      if (rewards.comboBonusXp > 0) rewardText += ` (combo bonus +${rewards.comboBonusXp})`;
+      if (rewardResult.leveledUp) rewardText += ` — Level Up! এখন Lv ${rewardResult.levelInfo.level} 🎉`;
+      if (rewardResult.streakIncreased) rewardText += ` — 🔥 Streak ${rewardResult.state.currentStreak} দিন!`;
+      document.getElementById("rewardLine").textContent = rewardText;
+      renderPlayerBar();
 
       const coachEl = document.getElementById("coachMessage");
       coachEl.textContent = "কোচ ভাবছে...";
