@@ -16,6 +16,7 @@ const LessonGenerator = (function () {
       return {
         text: getPracticeText("words"),
         reason: "এখনো তেমন কোনো নির্দিষ্ট দুর্বলতা পাওয়া যায়নি — সাধারণ অনুশীলন।",
+        source: "rule-based",
       };
     }
 
@@ -35,6 +36,7 @@ const LessonGenerator = (function () {
     return {
       text,
       reason: `তোমার সবচেয়ে বেশি ভুল হওয়া অক্ষর: ${charList} — এই lesson এ সেগুলো বেশি করে আছে।`,
+      source: "rule-based",
     };
   }
 
@@ -47,7 +49,7 @@ const LessonGenerator = (function () {
     const user = `এই অক্ষর/যুক্তাক্ষরগুলোতে ইউজারের ভুল বেশি হয়: ${charList}। এগুলো ঘন ঘন থাকবে এমন একটা অনুচ্ছেদ লেখো।`;
 
     const text = await AIClient.generate(system, user);
-    return { text, reason: `AI তোমার দুর্বল অক্ষর (${charList}) দেখে এই lesson বানিয়েছে।` };
+    return { text, reason: `AI তোমার দুর্বল অক্ষর (${charList}) দেখে এই lesson বানিয়েছে।`, source: "ai" };
   }
 
   // --- Public entrypoint ---------------------------------------------
@@ -59,6 +61,7 @@ const LessonGenerator = (function () {
         return await aiLesson(weakChars);
       } catch (err) {
         console.warn("AI lesson failed, falling back to rule-based:", err.message);
+        window.TBLastAIError = err.message; // surfaced by lesson.html's debug box
       }
     }
     return ruleBasedLesson(weakChars);
