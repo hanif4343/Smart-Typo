@@ -17,7 +17,7 @@
 
 ## ২. এখনকার স্কোপ (Active Scope)
 
-- ✅ চালু রাখা: Web + Android, Typing Engine, AI System (Grok/Cerebras client-side), পূর্ণ Gamification
+- ✅ চালু রাখা: Web + Android, Typing Engine, AI System (Groq/Mistral client-side), পূর্ণ Gamification
 - ⏸️ পরে করা হবে (কাঠামোয় জায়গা আছে, বিল্ড করা হয়নি): School Mode, Company Mode, Certification,
   Marketplace, Premium/Payments
 
@@ -111,6 +111,13 @@
   message), `practice.html`-এও `index.html`-এর মতো visible debug box যোগ হলো — AI live test করার
   সময় নিজে থেকেই দেখতে পারবে কী হচ্ছে, আমাকে স্ক্রিনশট পাঠানো নাও লাগতে পারে।
 
+- **2026-07-19**: 🐛 **Correction:** owner-এর আসলে Grok/Cerebras না, **Groq** আর **Mistral** API
+  আছে (Grok = xAI, Groq = আলাদা fast-inference কোম্পানি — নাম প্রায় একই কিন্তু ভিন্ন প্রোভাইডার)।
+  `ai-client.js` আপডেট হলো: Groq (`api.groq.com/openai/v1`, model `llama-3.3-70b-versatile`) ও
+  Mistral (`api.mistral.ai/v1`, model `mistral-small-latest`)। `settings.html` dropdown ও আপডেট
+  হয়েছে। localStorage key naming pattern অপরিবর্তিত (`tb_ai_key_<provider>`), তাই পুরনো
+  grok/cerebras key থাকলে সেগুলো অকেজো — নতুন provider সিলেক্ট করে নতুন key বসাতে হবে।
+
 ## ৬. পরবর্তী কাজ (Next Up)
 
 1. **Owner কাজ করছে:** Piskel-এ Slime এনিমি আঁকা
@@ -122,7 +129,8 @@
 ## ৭. খোলা প্রশ্ন (Owner-কে জিজ্ঞাসা করার মতো, কোনো AI নিজে ধরে নেবে না)
 
 - Web framework: Vanilla JS নাকি React?
-- Grok vs Cerebras — কোনটা lesson-gen এ primary, কোনটা fallback?
+- Groq vs Mistral — কোনটা lesson-gen আর কোনটা coach-message এর জন্য primary রাখবে (এখন default:
+  lesson-gen ও coach দুটোই active provider ব্যবহার করে, `settings.html` থেকে বেছে নেওয়া যায়)
 - "কোন আঙুল দুর্বল" ফিচার (Typing DNA-র অংশ) IME-based typing এ সরাসরি করা যায় না (raw keycode
   পাওয়া যায় না phonetic layout এ)। বাদ দেওয়া হবে, নাকি raw-keydown ক্যাপচার করে best-effort
   heuristic বানানো হবে (Bijoy/fixed layout এ সহজ, Avro phonetic এ অনির্ভরযোগ্য)?
