@@ -22,7 +22,7 @@
 4. **Android build**: `build-android.yml` workflow manually run করলে (Actions ট্যাব →
    "Build Android APK" → "Run workflow") একটা debug APK বানিয়ে দেবে, Artifacts থেকে ডাউনলোড
    করে ফোনে ইনস্টল করবে।
-5. **AI Key**: সাইট/অ্যাপ ওপেন করে Settings পেজে নিজের Grok/Cerebras key বসাও — এটা শুধু তোমার
+5. **AI Key**: সাইট/অ্যাপ ওপেন করে Settings পেজে নিজের Groq/Mistral key বসাও — এটা শুধু তোমার
    ডিভাইসে থাকে, repo তে কখনো যায় না।
 
 ## গুরুত্বপূর্ণ
