@@ -39,9 +39,9 @@
 | A. Infra & DevOps | 🟡 এগোচ্ছে | starter repo + workflows আছে; Firebase project তৈরি হয়েছে ও config বসানো হয়েছে; Auth (Google sign-in) + Firestore integration কোড লেখা হয়েছে, owner-এর একটা কাজ বাকি (নিচে দেখো) |
 | B. Typing Core Engine | 🟡 প্রথম ভার্সন কাজ করছে | `practice.html` — letters/conjuncts/words/sentences মোড, live WPM/accuracy, per-char error tracking। সেশন এখন localStorage সবসময় + সাইন-ইন থাকলে Firestore এও সিঙ্ক হয় |
 | C. AI System | 🟡 প্রথম ভার্সন কাজ করছে | rule-based lesson + AI-enhanced lesson/coach। **permission gate এখন সত্যিকার Firestore-backed** (`users/{uid}.aiEnabled`) — সাইন-ইন ছাড়া AI সবসময় বন্ধ থাকবে, `settings.html` এর local toggle সরিয়ে ফেলা হয়েছে |
-| D. Game/Gamification Engine | ⬜ শুরু হয়নি | |
-| E. Content (বাংলা) | 🟡 ছোট শুরু | `data/content-bank.js` এ letters/conjuncts/words/sentences এর ছোট পুল আছে, বাড়ানো দরকার |
-| F. Art & Character Design | ⬜ শুরু হয়নি | style এখনো ঠিক হয়নি (pixel/anime/3D?) |
+| D. Game/Gamification Engine | 🟡 আরও এগোলো | `game-engine.js` — XP/Gold/Level, daily streak, combo bonus XP। `typing-engine.js` এ combo tracking (consecutive correct chars) যোগ হয়েছে। `data/enemies.js` এ ৪টা placeholder enemy (emoji), প্রতি রাউন্ডে random rotate করে। `practice.html` এ combo badge (🔥×N) দেখায় ৫+ combo হলে |
+| E. Content (বাংলা) | 🟡 বড় হয়েছে | `data/content-bank.js` — প্রতি level এ এখন ৪-১২টা আইটেম (আগে ছিল ২-৫টা), conjuncts double হয়েছে |
+| F. Art & Character Design | 🟡 শুরু হয়েছে | **সিদ্ধান্ত:** style = pixel-art, owner নিজে হাতে আঁকবে (AI/CC0 asset না)। `docs/PIXEL_ART_GUIDE.md` এ সম্পূর্ণ ধাপে-ধাপে গাইড লেখা হয়েছে (Piskel টুল, 32×32 canvas, palette→silhouette→shading→outline→detail→animation)। এখনো কোনো actual sprite ফাইল আসেনি — owner কাজ করছে |
 
 ## ৫. এখন যা করা হয়েছে (Changelog)
 
@@ -76,22 +76,51 @@
   কারণ:** owner এখনো Authentication → Sign-in method ট্যাবে গিয়ে Google provider enable করেছে
   কিনা কনফার্ম হয়নি (শুধু Settings/Authorized domains ট্যাব screenshot এসেছে)।
 
+- **2026-07-19**: 🐛 **Bug fixed:** owner রিপোর্ট করলো একটা ভুল টাইপ (IME থেকে অতিরিক্ত অক্ষর ঢুকে
+  যাওয়া, যেমন "আমি" এর জায়গায় "আমিম") হলে বাকি পুরো টেক্সট ভুল দেখাচ্ছিল এবং accuracy অস্বাভাবিক
+  কমে যাচ্ছিল (স্ক্রিনশটে 25%)। **কারণ:** v1 engine positional index দিয়ে compare করতো
+  (`typed[i]` vs `target[i]`) — একটা insertion/deletion হলেই বাকি সব index শিফট হয়ে cascading
+  ভুল দেখাতো। **Fix:** `web/js/typing-engine.js` এখন Wagner–Fischer edit-distance alignment
+  ব্যবহার করে (match/substitution/insertion/pending classify করে), তাই একটা ভুলে বাকি সঠিক
+  টাইপিং আর ভুল দেখাবে না। `practice.html` এর rendering ও নতুন alignment থেকে আঁকে
+  (`TypingEngine.getLastOps()`)। "finished" detection ও এই সাথে ঠিক হলো (আগে insertion এর
+  কারণে সময়ের আগেই "শেষ" হয়ে যেতে পারতো)।
+- **2026-07-19**: sign-in bug resolved — নতুন API key কিছুক্ষণ propagate হতে সময় নিয়েছিল
+  (Google Cloud এ key তৈরি হওয়ার পরের সাধারণ delay), key restriction সমস্যা ছিল না। কোনো কোড
+  পরিবর্তন লাগেনি।
+- **2026-07-19**: Track D প্রথম ভার্সন — `web/js/game-engine.js` (XP/Gold/Level, flat 100XP/level
+  curve — pacing এখনো tune করা হয়নি, খেলে দেখে feedback দরকার)। `practice.html` এ placeholder
+  emoji enemy (👹→💀) HP bar, `index.html` এ quick player summary। **এখনো নেই:** কোনো real
+  character/enemy art (Track F), inventory, combo/skill system, daily streak — এগুলো পরের ধাপ।
+
+- **2026-07-19**: Track D: daily streak যোগ হলো (`updateStreak()`, `currentStreak`,
+  `longestStreak`, `lastPracticeDate`) — দিনে প্রথম সেশন শেষ হলে গণনা হয়, gap হলে reset হয়ে যায়।
+  Track E: content bank বড় করা হলো — letters ৪→৬, conjuncts ২→৪, words ৩→৮, sentences ৫→১২ সেট।
+
+- **2026-07-19**: Track F সিদ্ধান্ত: pixel-art style, owner নিজে আঁকবে (Piskel tool দিয়ে)।
+  `docs/PIXEL_ART_GUIDE.md` লেখা হয়েছে — সম্পূর্ণ workflow (silhouette → base color → shading
+  → outline → detail → animation)। শুরু করবে Slime দিয়ে (সহজ), তারপর Hero। PNG export করে
+  দিলে code integration করা হবে।
+
+- **2026-07-19**: owner-এর art কাজ চলাকালীন, স্বাধীনভাবে করা কাজ: (1) **Combo system** —
+  `typing-engine.js` এ consecutive-correct-char tracking (`currentCombo`, `maxCombo`), 5+ combo
+  হলে `practice.html` এ 🔥×N badge দেখায়, session শেষে +5 XP প্রতি ১০-combo milestone এ bonus।
+  (2) **Enemy rotation** — `data/enemies.js` এ ৪টা placeholder enemy, প্রতি রাউন্ডে random বাছাই
+  (real sprite এলে emoji-কে সহজে path দিয়ে swap করা যাবে)। (3) **Debug visibility সব পেজে** —
+  `lesson.html`-এ এখন badge সত্যিকারভাবে বলে AI চলেছে নাকি fallback হয়েছে, আর কেন (exact error
+  message), `practice.html`-এও `index.html`-এর মতো visible debug box যোগ হলো — AI live test করার
+  সময় নিজে থেকেই দেখতে পারবে কী হচ্ছে, আমাকে স্ক্রিনশট পাঠানো নাও লাগতে পারে।
+
 ## ৬. পরবর্তী কাজ (Next Up)
 
-1. **Owner action (জরুরি, sign-in bug):**
-   - Authentication → Sign-in method ট্যাবে গিয়ে Google provider "Enabled" আছে কিনা কনফার্ম করা,
-     না থাকলে enable করে একটা support email সিলেক্ট করা (এটা লাগে Google provider চালু করতে)
-   - এই diff push করার পর আবার Sign in বাটনে ক্লিক করা — এখন যদি error থাকে, পেজেই লাল বক্সে
-     দেখাবে, সেই মেসেজ AI-কে (আমাকে বা অন্য যেকোনো AI-কে) পাঠানো
-2. **Owner action:** AI চালু করে সত্যিই test করা — CORS ব্লক করলে বিকল্প নিয়ে আলোচনা করতে হবে
-   (Capacitor native HTTP plugin)
-3. Track D: Gamification (XP/Gold/Level/Combat) শুরু করা — এখন শুধু typing metrics আছে, game state নেই
-4. Track E: content bank আরও বড় করা (এখন খুবই ছোট, ৪-৫টা করে আইটেম আছে প্রতি level এ)
-5. Track F: Character/art style সিদ্ধান্ত
+1. **Owner কাজ করছে:** Piskel-এ Slime এনিমি আঁকা
+2. **Owner action (এখন সহজ):** `lesson.html`-এ গিয়ে AI চালু অবস্থায় দেখো badge কী বলে —
+   "✅ AI Lesson" মানে কাজ করছে, "⚠️ fallback" মানে CORS/key সমস্যা (exact error box-এ দেখাবে)
+3. Track D বাকি: skill/ultimate move (combo threshold পার হলে বিশেষ attack visual)
+4. Track B: layout-এর "কোন আঙুল দুর্বল" প্রশ্নটা (open question হিসেবে আগেই আছে) এখনো সিদ্ধান্ত হয়নি
 
 ## ৭. খোলা প্রশ্ন (Owner-কে জিজ্ঞাসা করার মতো, কোনো AI নিজে ধরে নেবে না)
 
-- Character/art style: pixel-art / anime / low-poly 3D?
 - Web framework: Vanilla JS নাকি React?
 - Grok vs Cerebras — কোনটা lesson-gen এ primary, কোনটা fallback?
 - "কোন আঙুল দুর্বল" ফিচার (Typing DNA-র অংশ) IME-based typing এ সরাসরি করা যায় না (raw keycode
