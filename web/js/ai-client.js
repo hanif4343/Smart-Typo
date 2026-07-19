@@ -1,4 +1,4 @@
-// Track C — direct client-side calls to Grok (xAI) / Cerebras.
+// Track C — direct client-side calls to Groq / Mistral.
 // No server/Cloud Function in between (see PROJECT_STATE.md decision).
 //
 // ⚠️ KNOWN RISK: these APIs are primarily meant for server-side use. Calling
@@ -14,7 +14,7 @@
 
 const AIClient = (function () {
   function getActiveProvider() {
-    return localStorage.getItem("tb_ai_provider_active") || "grok";
+    return localStorage.getItem("tb_ai_provider_active") || "groq";
   }
 
   function getKey(provider) {
@@ -22,21 +22,18 @@ const AIClient = (function () {
   }
 
   function isAiEnabled() {
-    // Authoritative source is now the Firestore users/{uid} doc, loaded by
-    // auth.js into window.TBUser. Not signed in → AI is off, no exceptions
-    // (this is the actual permission gate now, not a local toggle).
     return !!(window.TBUser && window.TBUser.aiEnabled === true);
   }
 
-  async function callGrok(key, systemPrompt, userPrompt) {
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
+  async function callGroq(key, systemPrompt, userPrompt) {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + key,
       },
       body: JSON.stringify({
-        model: "grok-4.3",
+        model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -45,20 +42,20 @@ const AIClient = (function () {
         max_tokens: 300,
       }),
     });
-    if (!res.ok) throw new Error("Grok API error: " + res.status);
+    if (!res.ok) throw new Error("Groq API error: " + res.status);
     const data = await res.json();
     return data.choices[0].message.content.trim();
   }
 
-  async function callCerebras(key, systemPrompt, userPrompt) {
-    const res = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+  async function callMistral(key, systemPrompt, userPrompt) {
+    const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: "Bearer " + key,
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b",
+        model: "mistral-small-latest",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -67,7 +64,7 @@ const AIClient = (function () {
         max_tokens: 300,
       }),
     });
-    if (!res.ok) throw new Error("Cerebras API error: " + res.status);
+    if (!res.ok) throw new Error("Mistral API error: " + res.status);
     const data = await res.json();
     return data.choices[0].message.content.trim();
   }
@@ -80,8 +77,8 @@ const AIClient = (function () {
     const key = getKey(provider);
     if (!key) throw new Error("No API key saved for " + provider);
 
-    if (provider === "cerebras") return callCerebras(key, systemPrompt, userPrompt);
-    return callGrok(key, systemPrompt, userPrompt);
+    if (provider === "mistral") return callMistral(key, systemPrompt, userPrompt);
+    return callGroq(key, systemPrompt, userPrompt);
   }
 
   return { generate, isAiEnabled, getActiveProvider };
