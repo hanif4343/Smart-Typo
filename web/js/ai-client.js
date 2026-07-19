@@ -1,4 +1,4 @@
-// Track C — direct client-side calls to Groq / Mistral.
+// Track C — direct client-side calls to Groq / Mistral / Cerebras.
 // No server/Cloud Function in between (see PROJECT_STATE.md decision).
 //
 // ⚠️ KNOWN RISK: these APIs are primarily meant for server-side use. Calling
@@ -69,6 +69,28 @@ const AIClient = (function () {
     return data.choices[0].message.content.trim();
   }
 
+  async function callCerebras(key, systemPrompt, userPrompt) {
+    const res = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + key,
+      },
+      body: JSON.stringify({
+        model: "llama3.1-70b",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: 0.8,
+        max_tokens: 300,
+      }),
+    });
+    if (!res.ok) throw new Error("Cerebras API error: " + res.status);
+    const data = await res.json();
+    return data.choices[0].message.content.trim();
+  }
+
   // Returns generated text, or throws if AI is disabled / no key / call fails.
   async function generate(systemPrompt, userPrompt) {
     if (!isAiEnabled()) throw new Error("AI disabled by permission setting");
@@ -78,6 +100,7 @@ const AIClient = (function () {
     if (!key) throw new Error("No API key saved for " + provider);
 
     if (provider === "mistral") return callMistral(key, systemPrompt, userPrompt);
+    if (provider === "cerebras") return callCerebras(key, systemPrompt, userPrompt);
     return callGroq(key, systemPrompt, userPrompt);
   }
 
