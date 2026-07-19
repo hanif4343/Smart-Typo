@@ -38,6 +38,8 @@
     <div class="lesson-text" id="lessonText"></div>
     <button class="go-btn" id="startBtn">এই Lesson দিয়ে প্র্যাকটিস শুরু করো</button>
   </div>
+
+  <div id="debugBox" style="display:none; margin-top:16px; padding:12px; background:#3a1414; border:1px solid #ff6b6b; border-radius:8px; color:#ffb3b3; font-size:0.85rem; text-align:left; word-break:break-word;"></div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -53,7 +55,17 @@
 <script>
   let currentLessonText = "";
 
+  function showDebug(msg) {
+    const box = document.getElementById("debugBox");
+    box.style.display = "block";
+    box.textContent = "⚠️ " + msg;
+  }
+  window.addEventListener("error", (e) => {
+    showDebug("Script error: " + e.message + " (" + e.filename + ":" + e.lineno + ")");
+  });
+
   async function loadLesson() {
+    window.TBLastAIError = null;
     const lesson = await LessonGenerator.generateLesson();
     currentLessonText = lesson.text;
 
@@ -61,9 +73,15 @@
     document.getElementById("lessonCard").style.display = "block";
     document.getElementById("reasonText").textContent = lesson.reason;
     document.getElementById("lessonText").textContent = lesson.text;
-    document.getElementById("sourceBadge").textContent = AIClient.isAiEnabled()
-      ? "AI Lesson (or fallback)"
-      : "Rule-based Lesson";
+
+    if (lesson.source === "ai") {
+      document.getElementById("sourceBadge").textContent = "✅ AI Lesson (আসলেই কাজ করেছে)";
+    } else if (AIClient.isAiEnabled()) {
+      document.getElementById("sourceBadge").textContent = "⚠️ AI চালু আছে কিন্তু fallback হয়েছে";
+      if (window.TBLastAIError) showDebug("AI call failed: " + window.TBLastAIError);
+    } else {
+      document.getElementById("sourceBadge").textContent = "Rule-based Lesson (AI বন্ধ/সাইন-ইন নেই)";
+    }
   }
 
   document.getElementById("startBtn").addEventListener("click", () => {
